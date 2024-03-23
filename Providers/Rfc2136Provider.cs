@@ -41,7 +41,7 @@ public class Rfc2136Provider : IProvider
             msg.TSigOptions = new TSigRecord(DomainName.Parse(_config.TsigOptions.Name), _config.TsigOptions.Algorithm, DateTime.Now, new TimeSpan(0, 5, 0), msg.TransactionID, ReturnCode.NoError, null, Convert.FromBase64String(_config.TsigOptions.Key));
         }
             
-        await new DnsClient(IPAddress.Parse(_config.ServerIp), 5000).SendUpdateAsync(msg);
+        var result = await new DnsClient(IPAddress.Parse(_config.ServerIp), 5000).SendUpdateAsync(msg);
     }
 }
 

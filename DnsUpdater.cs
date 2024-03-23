@@ -1,15 +1,50 @@
-public class DnsUpdater {
+using System.Globalization;
+using CsvHelper;
+using Microsoft.Extensions.Logging;
+
+public class DnsUpdater
+{
     private readonly ProviderFactory providerFactory;
     private readonly AddressWrapper addrWrapper;
-    public DnsUpdater(ProviderFactory providerFactory, AddressWrapper addrWrapper) {
+    private readonly ILogger logger;
+    public DnsUpdater(ILogger<DnsUpdater> logger, ProviderFactory providerFactory, AddressWrapper addrWrapper)
+    {
+        this.logger = logger;
         this.providerFactory = providerFactory;
         this.addrWrapper = addrWrapper;
     }
 
-    public async Task PerformUpdates(IEnumerable<Instruction> instructions) {
-        foreach(var instruction in instructions) {
+    public async Task<IEnumerable<Instruction>> ReadInstructions(string filename)
+    {
+        logger.LogInformation("loading instructions from {filename}", filename);
+        using var stream = new StreamReader(filename);
+        using var csvReader = new CsvReader(stream, CultureInfo.InvariantCulture);
+
+        var records = new List<Instruction>();
+        var providerSet = new HashSet<string>();
+        await foreach (var record in csvReader.GetRecordsAsync<Instruction>())
+        {
+            records.Add(record);
+            providerSet.Add(record.providerSlug);
+        }
+
+        logger.LogInformation("found {count} instructions", records.Count);
+        logger.LogInformation("found {count} distinct provider slugs", providerSet.Count);
+
+        providerFactory.PrimeCache(providerSet);
+        return records;
+    }
+
+
+    public async Task PerformUpdates(IEnumerable<Instruction> instructions)
+    {
+        foreach (var instruction in instructions)
+        {
+            logger.LogInformation("Starting {instruction}", instruction);
             var addr = await addrWrapper.GetAddress(instruction.addrSrc);
+            logger.LogInformation("Found address for {addrType}: {addr}", instruction.addrSrc, addr);
             await providerFactory.GetProvider(instruction.providerSlug).Update(instruction.host, addr);
+            logger.LogInformation("Completing {instruction}", instruction);
         }
     }
 }

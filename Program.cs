@@ -1,29 +1,33 @@
-﻿using System.Globalization;
-using CsvHelper;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-var configuration = new ConfigurationBuilder()
+var path = Directory.GetCurrentDirectory();
+
+IConfiguration configuration = new ConfigurationBuilder()
                 .AddEnvironmentVariables(prefix: "dnsBuilder_")
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile(Path.Combine(path, "providers.json"))
                 .Build();
 
-var providerFactory = new ProviderFactory(configuration);
-var updater = new DnsUpdater(providerFactory, new AddressWrapper());
+var services = new ServiceCollection();
 
-using var stream = new StreamReader("instructions.csv");
-using var csvReader = new CsvReader(stream, CultureInfo.InvariantCulture);
+services.AddLogging(config => config.AddConsole());
+services.AddSingleton(provider => configuration);
+services.AddSingleton<ProviderFactory>();
+services.AddSingleton<AddressWrapper>();
+services.AddSingleton<DnsUpdater>();
 
-var records = new List<Instruction>();
-var providerSet = new HashSet<string>();
-await foreach(var record in csvReader.GetRecordsAsync<Instruction>()) {
-    records.Add(record);
-    providerSet.Add(record.providerSlug);
+var sp = services.BuildServiceProvider();
+
+var updater = sp.GetRequiredService<DnsUpdater>();
+var logger = sp.GetRequiredService<ILogger<Program>>();
+
+try
+{
+    var instructions = await updater.ReadInstructions(Path.Combine(path, "instructions.csv"));
+    await updater.PerformUpdates(instructions);
 }
-
-// pre-build providers to ensure that configuration is valid
-// before actually running instructions
-foreach(var slug in providerSet) {
-    providerFactory.GetProvider(slug);
+catch (Exception e)
+{
+    logger.LogError(e, "Caught Exception, exiting");
 }
-
-await updater.PerformUpdates(records);
