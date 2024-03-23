@@ -1,4 +1,4 @@
 public class ProviderConfig { 
 
-    public string Domain { get; set; }
+    public required string Domain { get; set; }
 }

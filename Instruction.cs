@@ -1,4 +1,4 @@
-public record Instruction(AddressSource addrSrc, string providerSlug, int? ttl = null) {}
+public record Instruction(string providerSlug, string host, AddressSource addrSrc, int? ttl = null) { }
 
 public enum AddressSource {
     sysv4,

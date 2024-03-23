@@ -2,15 +2,14 @@ using System.Net;
 using DigitalOcean.API;
 using DigitalOcean.API.Models.Requests;
 
+namespace OfficialSounding.DnsUpdater.Providers;
 public class DigitalOceanProvider : IProvider
 {
-    public string Slug => "digitalOcean";
-
-    private readonly DigitalOceanConfig _config;
+    private readonly DigitalOceanProviderConfig _config;
     private readonly IDigitalOceanClient _client;
 
-    public DigitalOceanProvider(DigitalOceanConfig config) {
-        _config = config;
+    public DigitalOceanProvider(DigitalOceanProviderConfig? config) {
+        _config = config ?? throw new ArgumentNullException(nameof(config));
         _client = new DigitalOceanClient(config.ApiKey);
     }
 
@@ -28,7 +27,7 @@ public class DigitalOceanProvider : IProvider
     }
 }
 
-public class DigitalOceanConfig : ProviderConfig {
-    public string ApiKey { get; set; }
+public class DigitalOceanProviderConfig : ProviderConfig {
+    public required string ApiKey { get; set; }
     public int Ttl { get; set; } = 3600;
 }

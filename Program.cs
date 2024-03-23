@@ -1,40 +1,29 @@
-﻿using System.Net;
-using System.Net.Sockets;
+﻿using System.Globalization;
+using CsvHelper;
+using Microsoft.Extensions.Configuration;
 
-var host = Dns.GetHostEntry(Dns.GetHostName());
-foreach (var ip in host.AddressList)
-{
-        Console.Write($"{ip.AddressFamily}\t");
-        if(ip.AddressFamily == AddressFamily.InterNetworkV6) {
-            Console.WriteLine($"{ip.ScopeId}\t");
-        }
-        Console.WriteLine(ip.ToString());
+var configuration = new ConfigurationBuilder()
+                .AddEnvironmentVariables(prefix: "dnsBuilder_")
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+var providerFactory = new ProviderFactory(configuration);
+var updater = new DnsUpdater(providerFactory, new AddressWrapper());
+
+using var stream = new StreamReader("instructions.csv");
+using var csvReader = new CsvReader(stream, CultureInfo.InvariantCulture);
+
+var records = new List<Instruction>();
+var providerSet = new HashSet<string>();
+await foreach(var record in csvReader.GetRecordsAsync<Instruction>()) {
+    records.Add(record);
+    providerSet.Add(record.providerSlug);
 }
 
-HttpClient _http = new HttpClient(new SocketsHttpHandler() {
-    ConnectCallback = async (context, cancellationToken) => {
-        // Use DNS to look up the IP address(es) of the target host
-        IPHostEntry ipHostEntry = await Dns.GetHostEntryAsync(context.DnsEndPoint.Host);
+// pre-build providers to ensure that configuration is valid
+// before actually running instructions
+foreach(var slug in providerSet) {
+    providerFactory.GetProvider(slug);
+}
 
-        // Filter for IPv4 addresses only
-        IPAddress? ipAddress = ipHostEntry
-            .AddressList
-            .FirstOrDefault(i => i.AddressFamily == AddressFamily.InterNetwork);
-
-        // Fail the connection if there aren't any IPV4 addresses
-        if (ipAddress == null) {
-            throw new Exception($"No IP4 address for {context.DnsEndPoint.Host}");
-        }
-
-        // Open the connection to the target host/port
-        TcpClient tcp = new();
-        await tcp.ConnectAsync(ipAddress, context.DnsEndPoint.Port, cancellationToken);
-
-        // Return the NetworkStream to the caller
-        return tcp.GetStream();
-    }
-});
-
-var extIp = await _http.GetStringAsync("http://ifconfig.me");
-
-Console.WriteLine(extIp);
+await updater.PerformUpdates(records);
