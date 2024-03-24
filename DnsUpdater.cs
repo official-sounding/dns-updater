@@ -40,11 +40,11 @@ public class DnsUpdater
     {
         foreach (var instruction in instructions)
         {
-            logger.LogInformation("Starting {instruction}", instruction);
+            logger.LogDebug("Starting {instruction}", instruction);
             var addr = await addrWrapper.GetAddress(instruction.addrSrc);
-            logger.LogInformation("Found address for {addrType}: {addr}", instruction.addrSrc, addr);
+            logger.LogDebug("Found address for {addrType}: {addr}", instruction.addrSrc, addr);
             await providerFactory.GetProvider(instruction.providerSlug).Update(instruction.host, addr);
-            logger.LogInformation("Completing {instruction}", instruction);
+            logger.LogDebug("Completing {instruction}", instruction);
         }
     }
 }
