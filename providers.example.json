@@ -1,0 +1,15 @@
+{
+    "digitalOcean": {
+        "domain": "example.com",
+        "apiKey": "<DO token here>"
+    },
+    "rfc2136": {
+        "domain": "example.com",
+        "serverIp": "10.53.53.53",
+        "tsigOptions": {
+            "name": "example-key",
+            "key": "<TSIG base64 key>",
+            "algorithm": "Sha256"
+        }
+    }
+}

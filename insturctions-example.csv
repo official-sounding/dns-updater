@@ -1,0 +1,5 @@
+providerSlug,host,addrSrc,ifName,ttl
+rfc2136,example-1,sysv4,eth0,
+rfc2136,example-1,ulav6,eth0,
+digitalOcean,example-1,extv4,eth0,
+digitalOcean,example-1,pubv6,eth0,
