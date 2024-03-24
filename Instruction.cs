@@ -1,9 +1,10 @@
-public record Instruction(string providerSlug, string host, AddressSource addrSrc, int? ttl = null) {
+public record Instruction(string providerSlug, string host, AddressSource addrSrc, string ifName, int? ttl = null) {
  }
 
 public enum AddressSource {
     sysv4,
-    sysv6,
+    pubv6,
+    llv6,
     ulav6,
     extv4,
     extv6

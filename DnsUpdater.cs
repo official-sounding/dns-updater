@@ -41,8 +41,7 @@ public class DnsUpdater
         foreach (var instruction in instructions)
         {
             logger.LogDebug("Starting {instruction}", instruction);
-            var addr = await addrWrapper.GetAddress(instruction.addrSrc);
-            logger.LogDebug("Found address for {addrType}: {addr}", instruction.addrSrc, addr);
+            var addr = await addrWrapper.GetAddress(instruction.addrSrc, instruction.ifName);
             await providerFactory.GetProvider(instruction.providerSlug).Update(instruction.host, addr);
             logger.LogDebug("Completing {instruction}", instruction);
         }

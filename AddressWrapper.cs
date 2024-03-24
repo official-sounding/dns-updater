@@ -1,29 +1,67 @@
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 
-
-public class AddressWrapper
+public class AddressWrapper(ILogger<AddressWrapper> logger)
 {
+    private readonly HttpClient _httpV4 = new HttpClient(new SocketsHttpHandler() { ConnectCallback = BuildCallback(AddressFamily.InterNetwork) });
+    private readonly HttpClient _httpV6 = new HttpClient(new SocketsHttpHandler() { ConnectCallback = BuildCallback(AddressFamily.InterNetworkV6) });
 
-    private readonly HttpClient _httpV4 = new HttpClient(new SocketsHttpHandler() { ConnectCallback = BuildCallback(AddressFamily.InterNetwork)});
-    private readonly HttpClient _httpV6 = new HttpClient(new SocketsHttpHandler() { ConnectCallback = BuildCallback(AddressFamily.InterNetworkV6)});
-
-    public async Task<IPAddress> GetAddress(AddressSource src)
+    public async Task<IPAddress> GetAddress(AddressSource src, string? ifName)
     {
-        return src switch
+        if (!Enum.IsDefined(typeof(AddressSource), src))
         {
-            AddressSource.sysv4 => GetInternalAddress(AddressFamily.InterNetwork),
-            AddressSource.sysv6 => GetInternalAddress(AddressFamily.InterNetworkV6),
-            AddressSource.extv4 => await GetExternalAddress(_httpV4),
-            AddressSource.extv6 => await GetExternalAddress(_httpV6),
-            _ => throw new ArgumentException($"unknown address type {src}")
-        };
+            throw new ArgumentException($"{src} is not a valid AddressSource");
+        }
+
+        if (src == AddressSource.extv4)
+        {
+            return await GetExternalAddress(_httpV4);
+        }
+        else if (src == AddressSource.extv6)
+        {
+            return await GetExternalAddress(_httpV6);
+        }
+
+        return GetInternalAddress(src, ifName);
     }
 
-    private IPAddress GetInternalAddress(AddressFamily family)
+    private IPAddress GetInternalAddress(AddressSource src, string? ifName)
     {
-        var host = Dns.GetHostEntry(Dns.GetHostName());
-        return host.AddressList.First(addr => addr.AddressFamily == family);
+        if (ifName is null)
+        {
+            throw new ArgumentException($"ifName cannot be null for {src}");
+        }
+
+        var iface = InterfaceByName(ifName) ?? throw new ArgumentException($"{ifName} does not correspond to a network interface on this device");
+        var addrs = iface.GetIPProperties().UnicastAddresses;
+
+        logger.LogTrace("for interface {ifName}, found {count} possible addresses", ifName, addrs.Count);
+
+        var addr = addrs
+            .Select(u => u.Address)
+            .FirstOrDefault(addr =>
+            src switch
+            {
+                AddressSource.sysv4 => addr.AddressFamily == AddressFamily.InterNetwork,
+                AddressSource.pubv6 => addr.AddressFamily == AddressFamily.InterNetworkV6 && !addr.IsIPv6UniqueLocal && !addr.IsIPv6SiteLocal && !addr.IsIPv6LinkLocal,
+                AddressSource.ulav6 => addr.AddressFamily == AddressFamily.InterNetworkV6 && addr.IsIPv6UniqueLocal,
+                AddressSource.llv6 => addr.AddressFamily == AddressFamily.InterNetworkV6 && addr.IsIPv6LinkLocal,
+                _ => false
+            }
+        ) ?? throw new ArgumentException($"{ifName} does not have a valid {src} address");
+
+        logger.LogDebug("for source {src} and interface {ifName} found address {addr}", src, ifName, addr);
+
+        return addr;
+    }
+
+    private NetworkInterface? InterfaceByName(string name)
+    {
+        var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+        logger.LogTrace("Found {count} possible network interfaces", interfaces.Length);
+        return NetworkInterface.GetAllNetworkInterfaces().FirstOrDefault(iface => iface.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<IPAddress> GetExternalAddress(HttpClient client)
@@ -53,7 +91,7 @@ public class AddressWrapper
             // Open the connection to the target host/port
             TcpClient tcp = new();
             await tcp.ConnectAsync(ipAddress, context.DnsEndPoint.Port, cancellationToken);
-
+ 
             // Return the NetworkStream to the caller
             return tcp.GetStream();
         };
