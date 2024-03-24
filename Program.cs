@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OfficialSounding.DnsUpdater.Providers;
 
 var path = Directory.GetCurrentDirectory();
 
@@ -18,7 +20,15 @@ services.AddSingleton<ProviderFactory>();
 services.AddSingleton<AddressWrapper>();
 services.AddSingleton<DnsUpdater>();
 
+services.Configure<DigitalOceanProviderConfig>(configuration.GetSection("ditialOcean"));
+services.Configure<Rfc2136ProviderConfig>(configuration.GetSection("rfc2136"));
+
+services.AddKeyedSingleton<IProvider, Rfc2136Provider>("rfc2136");
+services.AddKeyedSingleton<IProvider, DigitalOceanProvider>("digitalOcean");
+
 var sp = services.BuildServiceProvider();
+
+var options = sp.GetService<IOptions<Rfc2136ProviderConfig>>();
 
 var updater = sp.GetRequiredService<DnsUpdater>();
 var logger = sp.GetRequiredService<ILogger<Program>>();

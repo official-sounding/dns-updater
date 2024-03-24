@@ -4,6 +4,7 @@ using ARSoft.Tools.Net;
 using ARSoft.Tools.Net.Dns;
 using ARSoft.Tools.Net.Dns.DynamicUpdate;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace OfficialSounding.DnsUpdater.Providers;
 
@@ -12,9 +13,9 @@ public class Rfc2136Provider : IProvider
     private readonly ILogger _logger;
     private readonly Rfc2136ProviderConfig _config;
 
-    public Rfc2136Provider(ILogger<Rfc2136Provider> logger, Rfc2136ProviderConfig? config) {
+    public Rfc2136Provider(ILogger<Rfc2136Provider> logger, IOptions<Rfc2136ProviderConfig> config) {
         _logger = logger;
-        _config = config ?? throw new ArgumentNullException(nameof(config));
+        _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
     }
 
     public async Task Update(string host, IPAddress addr)

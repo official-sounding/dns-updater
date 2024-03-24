@@ -2,6 +2,7 @@ using System.Net;
 using DigitalOcean.API;
 using DigitalOcean.API.Models.Requests;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace OfficialSounding.DnsUpdater.Providers;
 public class DigitalOceanProvider : IProvider
@@ -10,10 +11,10 @@ public class DigitalOceanProvider : IProvider
     private readonly DigitalOceanProviderConfig _config;
     private readonly IDigitalOceanClient _client;
 
-    public DigitalOceanProvider(ILogger<DigitalOceanProvider> logger, DigitalOceanProviderConfig? config) {
+    public DigitalOceanProvider(ILogger<DigitalOceanProvider> logger, IOptions<DigitalOceanProviderConfig> config) {
         _logger = logger;
-        _config = config ?? throw new ArgumentNullException(nameof(config));
-        _client = new DigitalOceanClient(config.ApiKey);
+        _config = config?.Value ?? throw new ArgumentNullException(nameof(config));
+        _client = new DigitalOceanClient(_config.ApiKey);
     }
 
     public async Task Update(string host, IPAddress addr)
