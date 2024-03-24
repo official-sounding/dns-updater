@@ -9,7 +9,7 @@ A dynamic DNS program that can perform multiple updates to different providers. 
 
 # How to use
 
-Rename `providers.example.json` to `providers.json`, and populate the relevant sections for the providers you wish to use.
+Rename `providers.example.json` to `providers.json`, and populate the relevant sections for the providers you wish to use.  Alternatively, all configuration can be supplied by environment variables, prefixed with `dnsBuilder_`
 Rename `instructions-example.csv` to `instructions.csv`, and populate the instructions with provider, host & address source information.
 
 ## Address Sources

@@ -5,8 +5,9 @@ using Microsoft.Extensions.Logging;
 var path = Directory.GetCurrentDirectory();
 
 IConfiguration configuration = new ConfigurationBuilder()
+                .SetBasePath(path)
+                .AddJsonFile("providers.json", optional: true)
                 .AddEnvironmentVariables(prefix: "dnsBuilder_")
-                .AddJsonFile(Path.Combine(path, "providers.json"))
                 .Build();
 
 var services = new ServiceCollection();
