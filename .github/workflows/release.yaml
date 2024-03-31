@@ -6,7 +6,7 @@ name: .NET
 on:
   push:
     tags:
-      - '*'
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
   build:
@@ -28,6 +28,11 @@ jobs:
       run: dotnet publish -r linux-x64 -o ./publish/linux-x64 ./dns-updater.csproj
     - name: publish linux-musl
       run: dotnet publish -r linux-musl-x64 -o ./publish/linux-musl-x64 ./dns-updater.csproj
+    - name: Changelog
+      uses: Bullrich/generate-release-changelog@master
+      id: Changelog
+      env:
+        REPO: ${{ github.repository }}
     - name: release
       uses: actions/create-release@v1
       id: create_release
@@ -36,7 +41,8 @@ jobs:
         prerelease: false
         release_name: ${{ steps.version.outputs.version }}
         tag_name: ${{ github.ref }}
-        body_path: CHANGELOG.md
+        body: |
+          ${{ steps.Changelog.outputs.changelog }}
       env:
         GITHUB_TOKEN: ${{ github.token }}
     - name: upload windows artifact
