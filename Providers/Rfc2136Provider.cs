@@ -50,7 +50,7 @@ public class Rfc2136Provider : IProvider
         }
             
         var result = await new DnsClient(IPAddress.Parse(_config.ServerIp), 5000).SendUpdateAsync(msg);
-        _logger.LogInformation("Result from DNS Server after RFC 2136 update: {returnCode}", result?.ReturnCode);
+        _logger.LogInformation("Result from DNS Server after updating {fqdn} to {addr}: {returnCode}", fqdn, addr, result?.ReturnCode);
     }
 }
 
