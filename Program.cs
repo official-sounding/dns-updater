@@ -20,7 +20,7 @@ services.AddSingleton<ProviderFactory>();
 services.AddSingleton<AddressWrapper>();
 services.AddSingleton<DnsUpdater>();
 
-services.Configure<DigitalOceanProviderConfig>(configuration.GetSection("ditialOcean"));
+services.Configure<DigitalOceanProviderConfig>(configuration.GetSection("digitalOcean"));
 services.Configure<Rfc2136ProviderConfig>(configuration.GetSection("rfc2136"));
 
 services.AddKeyedSingleton<IProvider, Rfc2136Provider>("rfc2136");
