@@ -14,7 +14,7 @@ IConfiguration configuration = new ConfigurationBuilder()
 
 var services = new ServiceCollection();
 
-services.AddLogging(config => config.AddConsole().SetMinimumLevel(LogLevel.Trace));
+services.AddLogging(config => config.AddConsole().SetMinimumLevel(LogLevel.Information));
 services.AddSingleton(provider => configuration);
 services.AddSingleton<ProviderFactory>();
 services.AddSingleton<AddressWrapper>();
