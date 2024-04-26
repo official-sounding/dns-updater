@@ -3,13 +3,20 @@ A dynamic DNS program that can perform multiple updates to different providers. 
 
 # Implemented Providers
 
-* **RFC 2136**: Performs [RFC 2136](https://www.rfc-editor.org/rfc/rfc2136.txt) Dynamic DNS Updates for A & AAAA records
-* **DigitalOcean**: Given a digital ocean key with read & write access, can perform create & updates of A & AAAA records
-
+* **RFC 2136**: [RFC 2136](https://www.rfc-editor.org/rfc/rfc2136.txt) DNS Updates for A & AAAA records. Supports TSIG keys.
+* **DigitalOcean**: DO API DNS updates of A & AAAA records. Requires a Digital Ocean key with read & write access to the domain in question.
 
 # How to use
 
-Rename `providers.example.json` to `providers.json`, and populate the relevant sections for the providers you wish to use.  Alternatively, all configuration can be supplied by environment variables, prefixed with `dnsBuilder_`
+Releases are published with single-file, non-self-contained (aka runtime-dependent) executables for three Runtimes:
+
+* win-x64
+* linux-x64
+* linux-musl-x64
+
+With the executable + a dotnet 8.0.x runtime, use the following steps to run the program
+
+Rename `providers.example.json` to `providers.json`, and populate the relevant sections for the providers you wish to use.  Alternatively, all provider configuration can be supplied by environment variables, prefixed with `dnsBuilder_`
 Rename `instructions-example.csv` to `instructions.csv`, and populate the instructions with provider, host & address source information.
 
 ## Address Sources
